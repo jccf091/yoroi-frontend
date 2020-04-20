@@ -21,8 +21,8 @@ Feature: Memos
     When I delete the memo
     Then There is no memo for the transaction
 
-  @it-98
-  Scenario: Create a transaction with a memo (IT-98)
+  @it-100
+  Scenario: Create a transaction with a memo (IT-100)
     Given There is a wallet stored named many-tx-wallet
     And I have a wallet with funds
     When I go to the send transaction screen

@@ -127,6 +127,10 @@ async function takeScreenshot(driver, name) {
   await writeFile(path, screenshot, 'base64');
 }
 
+Then(/^I pause the test to debug$/, async function () {
+  await this.waitForElement('.element_that_does_not_exist');
+});
+
 Given(/^There is a wallet stored named ([^"]*)$/, async function (walletName) {
   const restoreInfo = testWallets[walletName];
   expect(restoreInfo).to.not.equal(undefined);
@@ -301,17 +305,22 @@ async function importLocalStorage(client, importDir: string) {
 
 async function importIndexedDB(client, importDir: string) {
   const indexedDBPath = `${importDir}/indexedDB.json`;
+
+  let indexedDBData;
   try {
-    const indexedDBData = fs.readFileSync(indexedDBPath).toString();
-    await client.driver.executeAsyncScript((data, done) => {
-      window.yoroi.api.ada.importLocalDatabase(
-        window.yoroi.stores.loading.loadPersitentDbRequest.result,
-        data
-      )
-        .then(done)
-        .catch(err => done(err));
-    }, JSON.parse(indexedDBData));
-  } catch (e) {} // eslint-disable-line no-empty
+    // some tests check for behavior based on local storage only and don't require IndexedDb
+    indexedDBData = fs.readFileSync(indexedDBPath).toString();
+  } catch (e) {
+    return;
+  }
+  await client.driver.executeAsyncScript((data, done) => {
+    window.yoroi.api.ada.importLocalDatabase(
+      window.yoroi.stores.loading.loadPersitentDbRequest.result,
+      data
+    )
+      .then(done)
+      .catch(err => { console.log(err); throw err; });
+  }, JSON.parse(indexedDBData));
 }
 
 let capturedDbState = undefined;
