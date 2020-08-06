@@ -346,7 +346,6 @@ export default class CardanoStakingPage extends Component<Props> {
   }
 
   @computed get generated(): {|
-    SeizaFetcherProps: InjectedOrGenerated<SeizaFetcherData>,
     actions: {|
       ada: {|
         delegationTransaction: {|
@@ -488,9 +487,6 @@ export default class CardanoStakingPage extends Component<Props> {
           getTooltipActiveNotification: stores.uiNotifications.getTooltipActiveNotification,
         },
       },
-      SeizaFetcherProps: (
-          { actions, stores, }: InjectedOrGenerated<SeizaFetcherData>
-      ),
       actions: {
         notifications: {
           open: {
