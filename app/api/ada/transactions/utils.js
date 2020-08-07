@@ -178,16 +178,14 @@ export function derivePathPrefix(purpose: number, accountIndex: number): string 
   return `m/${purpose - HARD_DERIVATION_START}'/${CoinTypes.CARDANO - HARD_DERIVATION_START}'/${accountIndex - HARD_DERIVATION_START}'`;
 }
 
-export function verifyFromBip44Root(
-  addressingInfo: Addressing,
-): void {
-  const { addressing } = addressingInfo;
-
-  const accountPosition = addressing.startLevel;
-  if (accountPosition !== 1) {
+export function verifyFromBip44Root(request: $ReadOnly<{|
+  ...$PropertyType<Addressing, 'addressing'>,
+|}>): void {
+  const accountPosition = request.startLevel;
+  if (accountPosition !== Bip44DerivationLevels.PURPOSE.level) {
     throw new Error(`${nameof(verifyFromBip44Root)} addressing does not start from root`);
   }
-  const lastLevelSpecified = addressing.startLevel + addressing.path.length - 1;
+  const lastLevelSpecified = request.startLevel + request.path.length - 1;
   if (lastLevelSpecified !== Bip44DerivationLevels.ADDRESS.level) {
     throw new Error(`${nameof(verifyFromBip44Root)} incorrect addressing size`);
   }

@@ -111,12 +111,12 @@ import type {
 } from '../../domain/HWSignTx';
 import Notice from '../../domain/Notice';
 import type { CardanoSignTransaction } from 'trezor-connect/lib/types/networks/cardano';
-// import {
-//   createTrezorSignTxPayload,
-//   broadcastTrezorSignedTx,
-//   createLedgerSignTxPayload,
-//   prepareAndBroadcastLedgerSignedTx,
-// } from './transactions/byron/hwTransactions';
+import {
+  createTrezorSignTxPayload,
+  broadcastTrezorSignedTx,
+  // createLedgerSignTxPayload,
+  // prepareAndBroadcastLedgerSignedTx,
+} from './transactions/shelley/hwTransactions';
 import {
   GenericApiError,
   IncorrectWalletPasswordError,
@@ -274,8 +274,7 @@ export type SignAndBroadcastFunc = (
 // createTrezorSignTxData
 
 export type CreateTrezorSignTxDataRequest = {|
-  signRequest: BaseSignRequest<RustModule.WalletV4.TransactionBuilder>,
-  getTxsBodiesForUTXOs: TxBodiesFunc,
+  signRequest: HaskellShelleyTxSignRequest,
   network: $ReadOnly<NetworkRow>,
 |};
 export type CreateTrezorSignTxDataResponse = {|
@@ -778,22 +777,20 @@ export default class AdaApi {
     try {
       Logger.debug(`${nameof(AdaApi)}::${nameof(this.createTrezorSignTxData)} called`);
 
-      throw new HardwareUnsupportedError();
+      const config = getCardanoHaskellBaseConfig(
+        request.network
+      ).reduce((acc, next) => Object.assign(acc, next), {});
 
-      // const config = getCardanoHaskellBaseConfig(
-      //   request.network
-      // ).reduce((acc, next) => Object.assign(acc, next), {});
+      const trezorSignTxPayload = await createTrezorSignTxPayload(
+        request.signRequest,
+        config.ByronNetworkId,
+        Number.parseInt(config.ChainNetworkId, 10),
+      );
+      Logger.debug(`${nameof(AdaApi)}::${nameof(this.createTrezorSignTxData)} success: ` + stringifyData(trezorSignTxPayload));
 
-      // const trezorSignTxPayload = await createTrezorSignTxPayload(
-      //   request.signRequest,
-      //   request.getTxsBodiesForUTXOs,
-      //   config.ByronNetworkId,
-      // );
-      // Logger.debug(`${nameof(AdaApi)}::${nameof(this.createTrezorSignTxData)} success: ` + stringifyData(trezorSignTxPayload));
-
-      // return {
-      //   trezorSignTxPayload,
-      // };
+      return {
+        trezorSignTxPayload,
+      };
     } catch (error) {
       Logger.error(`${nameof(AdaApi)}::${nameof(this.createTrezorSignTxData)} error: ` + stringifyError(error));
       if (error instanceof LocalizableError) throw error;
@@ -806,14 +803,13 @@ export default class AdaApi {
   ): Promise<BroadcastTrezorSignedTxResponse> {
     Logger.debug(`${nameof(AdaApi)}::${nameof(this.broadcastTrezorSignedTx)} called`);
     try {
-      throw new HardwareUnsupportedError();
-      // const response = await broadcastTrezorSignedTx(
-      //   request.signedTxRequest,
-      //   request.sendTx
-      // );
-      // Logger.debug(`${nameof(AdaApi)}::${nameof(this.broadcastTrezorSignedTx)} success: ` + stringifyData(response));
+      const response = await broadcastTrezorSignedTx(
+        request.signedTxRequest,
+        request.sendTx
+      );
+      Logger.debug(`${nameof(AdaApi)}::${nameof(this.broadcastTrezorSignedTx)} success: ` + stringifyData(response));
 
-      // return response;
+      return response;
     } catch (error) {
       Logger.error(`${nameof(AdaApi)}::${nameof(this.broadcastTrezorSignedTx)} error: ` + stringifyError(error));
 

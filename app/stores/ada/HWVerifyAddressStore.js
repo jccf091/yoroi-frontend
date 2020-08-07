@@ -6,7 +6,7 @@ import {
   prepareLedgerConnect,
 } from '../../utils/hwConnectHandler';
 
-import LedgerConnect, { toDerivationPathString } from '@emurgo/ledger-connect-handler';
+import LedgerConnect from '@emurgo/ledger-connect-handler';
 import { wrapWithFrame } from '../lib/TrezorWrapper';
 
 import LocalizableError from '../../i18n/LocalizableError';
@@ -33,11 +33,10 @@ import {
 import {
   PublicDeriver,
 } from '../../api/ada/lib/storage/models/PublicDeriver/index';
-import { addressToKind, } from '../../api/ada/lib/storage/bridge/utils';
-import { CoreAddressTypes } from '../../api/ada/lib/storage/database/primitives/enums';
+import { normalizeToAddress, } from '../../api/ada/lib/storage/bridge/utils';
 import type { NetworkRow } from '../../api/ada/lib/storage/database/primitives/tables';
 import { getCardanoHaskellBaseConfig } from '../../api/ada/lib/storage/database/prepackaged/networks';
-import { ChainDerivations } from '../../config/numbersConfig';
+import { toTrezorAddressParameters } from '../../api/ada/transactions/shelley/hwTransactions';
 
 export default class HWVerifyAddressStore extends Store {
   @observable isActionProcessing: boolean = false;
@@ -94,46 +93,17 @@ export default class HWVerifyAddressStore extends Store {
     const config = getCardanoHaskellBaseConfig(network)
       .reduce((acc, next) => Object.assign(acc, next), {});
 
-    const getAddressParams = (() => {
-      const type = addressToKind(
-        address,
-        'bech32',
-        network
-      );
-      switch (type) {
-        case CoreAddressTypes.CARDANO_LEGACY: return {
-          addressType: 8,
-          path: toDerivationPathString(path),
-        };
-        case CoreAddressTypes.CARDANO_BASE: return {
-          addressType: 0,
-          path: toDerivationPathString(path),
-          stakingPath: toDerivationPathString([
-            path[0],
-            path[1],
-            path[2],
-            ChainDerivations.CHIMERIC_ACCOUNT, // replace the chain entry only
-            0
-          ]),
-        };
-        case CoreAddressTypes.CARDANO_PTR: throw new Error(`${nameof(HWVerifyAddressStore)}::${nameof(this.trezorVerifyAddress)} pointer address not supported yet`);
-        // case CoreAddressTypes.CARDANO_PTR: return {
-        //   addressType: 4,
-        //   path: toDerivationPathString(path),
-        //   certificatePointer: {
-        //     blockIndex: 1,
-        //     txIndex: 2,
-        //     certificateIndex: 3,
-        //   },
-        // };
-        default: throw new Error(`${nameof(HWVerifyAddressStore)}::${nameof(this.trezorVerifyAddress)} unexpected type ${type}`);
-      }
-    });
+    const wasmAddr = normalizeToAddress(address);
+    if (wasmAddr == null) throw new Error(`${nameof(HWVerifyAddressStore)}::${nameof(this.trezorVerifyAddress)} invalid address ${address}`);
+    const addressParams = toTrezorAddressParameters(
+      wasmAddr,
+      path,
+    );
     try {
       await wrapWithFrame(trezor => trezor.cardanoGetAddress({
         protocolMagic: config.ByronNetworkId,
         networkId: Number.parseInt(config.ChainNetworkId, 10),
-        addressParameters: getAddressParams(),
+        addressParameters: addressParams,
       }));
     } catch (error) {
       Logger.error(`${nameof(HWVerifyAddressStore)}::${nameof(this.trezorVerifyAddress)}::error: ` + stringifyError(error));

@@ -325,7 +325,7 @@ export default class WalletSendPage extends Component<InjectedOrGenerated<Genera
           error={trezorSendStore.error}
           onSubmit={
             () => trezorSendAction.sendUsingTrezor.trigger({
-              params: { signRequest: signRequest.self() },
+              params: { signRequest },
               publicDeriver,
             })
           }
