@@ -2,17 +2,13 @@
 import {
   Logger,
   stringifyError,
-  stringifyData
 } from '../../../../utils/logging';
 import type {
-  BaseSignRequest,
   AddressedUtxo,
 } from '../types';
-import type { UtxoLookupMap }  from '../utils';
-import { utxosToLookupMap, verifyFromBip44Root }  from '../utils';
+import { verifyFromBip44Root }  from '../utils';
 import type {
   SendFunc,
-  TxBodiesFunc,
   SignedRequest,
 } from '../../lib/state-fetch/types';
 import {
@@ -41,7 +37,6 @@ import type {
   CardanoWithdrawal,
   CardanoCertificate,
   CardanoAddressParameters,
-  CardanoCertificatePointer,
 } from 'trezor-connect/lib/types/networks/cardano';
 import {
   CERTIFICATE_TYPE,
@@ -59,8 +54,6 @@ import {
 } from '../../../../config/numbersConfig';
 
 import { RustModule } from '../../lib/cardanoCrypto/rustLoader';
-import type { CoreAddressT } from '../../lib/storage/database/primitives/enums';
-import { CoreAddressTypes } from '../../lib/storage/database/primitives/enums';
 import { range } from 'lodash';
 import { toHexOrBase58 } from '../../lib/storage/bridge/utils';
 
@@ -84,6 +77,15 @@ export async function createTrezorSignTxPayload(
     signRequest.self().changeAddr
   );
 
+  let request = {
+    inputs: trezorInputs,
+    outputs: trezorOutputs,
+    fee: txBody.fee().to_str(),
+    ttl: txBody.ttl().toString(),
+    protocolMagic: byronNetworkMagic,
+    networkId,
+  };
+
   // withdrawals
   const withdrawals = txBody.withdrawals();
   const getStakingKeyPath = () => {
@@ -104,37 +106,37 @@ export async function createTrezorSignTxPayload(
     stakingKeyPath[Bip44DerivationLevels.ADDRESS.level] = 0;
     return stakingKeyPath;
   };
-  const trezorWithdrawals = withdrawals == null
-    ? undefined
-    : formatTrezorWithdrawals(
-      withdrawals,
-      [getStakingKeyPath()],
-    );
+  request = withdrawals == null
+    ? request
+    : {
+      ...request,
+      withdrawals: formatTrezorWithdrawals(
+        withdrawals,
+        [getStakingKeyPath()],
+      )
+    };
 
   // certificates
   const certificates = txBody.certs();
-  const trezorCertificates = certificates == null
-    ? undefined
-    : formatTrezorCertificates(
-      certificates,
-      range(0, certificates.len()).map(_i => getStakingKeyPath()),
-    );
+  request = certificates == null
+    ? request
+    : {
+      ...request,
+      certificates: formatTrezorCertificates(
+        certificates,
+        range(0, certificates.len()).map(_i => getStakingKeyPath()),
+      )
+    };
 
   const metadata = signRequest.txMetadata();
+  request = metadata == null
+    ? request
+    : {
+      ...request,
+      metadata: Buffer.from(metadata.to_bytes()).toString('hex')
+    };
 
-  return {
-    inputs: trezorInputs,
-    outputs: trezorOutputs,
-    fee: txBody.fee().to_str(),
-    ttl: txBody.ttl().toString(),
-    certificates: trezorCertificates,
-    withdrawals: trezorWithdrawals,
-    metadata: metadata == null
-      ? undefined
-      : Buffer.from(metadata.to_bytes()).toString('hex'),
-    protocolMagic: byronNetworkMagic,
-    networkId,
-  };
+  return request;
 }
 
 function formatTrezorWithdrawals(
