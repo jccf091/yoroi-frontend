@@ -114,9 +114,11 @@ import type { CardanoSignTransaction } from 'trezor-connect/lib/types/networks/c
 import {
   createTrezorSignTxPayload,
   broadcastTrezorSignedTx,
+} from './transactions/shelley/trezorTx';
+// import {
   // createLedgerSignTxPayload,
   // prepareAndBroadcastLedgerSignedTx,
-} from './transactions/shelley/hwTransactions';
+// } from './transactions/shelley/ledgerTx';
 import {
   GenericApiError,
   IncorrectWalletPasswordError,

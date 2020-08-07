@@ -36,7 +36,7 @@ import {
 import { normalizeToAddress, } from '../../api/ada/lib/storage/bridge/utils';
 import type { NetworkRow } from '../../api/ada/lib/storage/database/primitives/tables';
 import { getCardanoHaskellBaseConfig } from '../../api/ada/lib/storage/database/prepackaged/networks';
-import { toTrezorAddressParameters } from '../../api/ada/transactions/shelley/hwTransactions';
+import { toTrezorAddressParameters } from '../../api/ada/transactions/shelley/trezorTx';
 
 export default class HWVerifyAddressStore extends Store {
   @observable isActionProcessing: boolean = false;
