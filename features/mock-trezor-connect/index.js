@@ -24,7 +24,13 @@ class MockTrezorConnect {
     MockTrezorConnect.mockConnectDevice();
 
     const payload = {
-      path: [2147483692, 2147485463, 2147483648, 0, 8],
+      addressParameters: {
+        addressType: 8, // byron address
+        path: "m/44'/1815'/0'/0/8",
+      },
+      protocolMagic: 764824073,
+      networkId: 1,
+      serializedStakingPath: `m/44'/1815'/0'/2/0`,
       serializedPath: `m/44'/1815'/0'/0/8`,
       address: 'Ae2tdPwUPEZAVDjkPPpwDhXMSAjH53CDmd2xMwuR9tZMAZWxLhFphrHKHXe',
     };

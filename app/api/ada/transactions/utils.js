@@ -25,6 +25,7 @@ import type {
 import type { TransactionExportRow } from '../../export';
 import {
   HARD_DERIVATION_START,
+  CoinTypes,
 } from '../../../config/numbersConfig';
 import type {
   Addressing,
@@ -166,12 +167,15 @@ export function utxosToLookupMap(
   return lookupMap;
 }
 
-export function derivePathPrefix(accountIndex: number): string {
+export function derivePathPrefix(purpose: number, accountIndex: number): string {
   if (accountIndex < HARD_DERIVATION_START) {
     throw new Error(`${nameof(derivePathPrefix)} accountIndex < 0x80000000`);
   }
+  if (purpose < HARD_DERIVATION_START) {
+    throw new Error(`${nameof(derivePathPrefix)} purpose < 0x80000000`);
+  }
   // https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
-  return `m/44'/1815'/${accountIndex}'`;
+  return `m/${purpose - HARD_DERIVATION_START}'/${CoinTypes.CARDANO - HARD_DERIVATION_START}'/${accountIndex - HARD_DERIVATION_START}'`;
 }
 
 export function verifyFromBip44Root(
